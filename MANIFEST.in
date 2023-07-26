@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include czech_exchange_rate *.css
+recursive-include czech_exchange_rate *.csv
+recursive-include czech_exchange_rate *.html
+recursive-include czech_exchange_rate *.ico
+recursive-include czech_exchange_rate *.js
+recursive-include czech_exchange_rate *.json
+recursive-include czech_exchange_rate *.md
+recursive-include czech_exchange_rate *.png
+recursive-include czech_exchange_rate *.py
+recursive-include czech_exchange_rate *.svg
+recursive-include czech_exchange_rate *.txt
+recursive-exclude czech_exchange_rate *.pyc
