@@ -66,7 +66,7 @@ doctype_js = {
 # ------------
 
 # before_install = "czech_exchange_rate.install.before_install"
-# after_install = "czech_exchange_rate.install.after_install"
+after_install = "czech_exchange_rate.czech_api.after_install"
 
 # Uninstallation
 # ------------

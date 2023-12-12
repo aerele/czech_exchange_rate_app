@@ -108,3 +108,19 @@ def get_exchange_rate(from_currency, to_currency, transaction_date=None, args=No
 			).format(from_currency, to_currency, transaction_date)
 		)
 		return 0.0
+
+def after_install():
+	set_default_value()
+
+def set_default_value():
+	from frappe.custom.doctype.property_setter.property_setter import make_property_setter
+	options = frappe.get_meta("Currency Exchange Settings").get_field('service_provider').options.split("\n")
+	options.insert(len(options) - 1, "czechexchange.app")
+
+	make_property_setter(
+		doctype = "Currency Exchange Settings",
+		fieldname = "service_provider",
+		property = "options",
+		value =  "\n".join(options),
+		property_type = "Select"
+	)
