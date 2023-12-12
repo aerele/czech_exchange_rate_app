@@ -12,7 +12,6 @@ app_license = "MIT"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/czech_exchange_rate/css/czech_exchange_rate.css"
-# app_include_js = "/assets/czech_exchange_rate/js/czech_exchange_rate.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/czech_exchange_rate/css/czech_exchange_rate.css"
@@ -29,6 +28,9 @@ app_license = "MIT"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
+doctype_js = {
+    "Currency Exchange Settings": "/public/js/czech_exchange_rate.js"
+    }
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -94,9 +96,9 @@ app_license = "MIT"
 # ---------------
 # Override standard doctype classes
 
-# override_doctype_class = {
-#	"ToDo": "custom_app.overrides.CustomToDo"
-# }
+override_doctype_class = {
+	"Currency Exchange Settings": "czech_exchange_rate.czech_api.CustomCurrencyExchangeSettings"
+}
 
 # Document Events
 # ---------------
@@ -139,9 +141,10 @@ app_license = "MIT"
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-#	"frappe.desk.doctype.event.event.get_events": "czech_exchange_rate.event.get_events"
-# }
+
+override_whitelisted_methods = {
+	"erpnext.setup.utils.get_exchange_rate": "czech_exchange_rate.czech_api.get_exchange_rate"
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
