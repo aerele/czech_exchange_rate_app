@@ -54,15 +54,18 @@ def get_exchange_rate(from_currency, to_currency, transaction_date=None, args=No
 		return 0.00
 
 	try:
+		is_from_cache = 1
+		settings = frappe.get_cached_doc("Currency Exchange Settings")
+		if settings.service_provider == "czechexchange.app":
+			is_from_cache = 0
+
 		cache = frappe.cache()
 		key = "currency_exchange_rate_{0}:{1}:{2}".format(
 			transaction_date, from_currency, to_currency)
-		value = cache.get(key)
+		value = cache.get(key) if is_from_cache else 0
 
 		if not value :
 			import requests
-
-			settings = frappe.get_cached_doc("Currency Exchange Settings")
 
 			if settings.service_provider == "czechexchange.app":
 				api_url = settings.api_endpoint
@@ -77,8 +80,12 @@ def get_exchange_rate(from_currency, to_currency, transaction_date=None, args=No
 						if er['currencyCode'] == from_currency:
 							value = er['rate']
 							break
+					else:
+						frappe.log_error("Unable to fetch exchange rate from service provider {}".format(settings.service_provider))
+						frappe.msgprint(_(
+						"Unable to find exchange rate for {0} to {1} for key date {2}. Please create a Currency Exchange record manually").format(from_currency, to_currency, transaction_date))
 
-					cache.setex(name=key, time=21600, value=flt(value))
+						return 0.0
 				else:
 					value = 0.0
 					frappe.msgprint("API Link Expired")
