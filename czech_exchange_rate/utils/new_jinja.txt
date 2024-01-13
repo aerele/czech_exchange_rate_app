@@ -1,0 +1,300 @@
+{% set tax_details_list = {} %}
+{% set negative_tax_details_list = {} %}
+{% set invoiced_amount_list = {"total_base_rate": 0 , "total_vat_rate": 0, "invoiced_total": 0} %}
+{% set invoiced_amount_list_negative = {"total_base_rate": 0 , "total_vat_rate": 0, "invoiced_total": 0} %}
+<div>
+    <table width=100% style = "border: 1px solid black">
+        <tr style = "border: 1px solid black;font-size:13px;">
+            <th
+                style = "width:25%;
+                color: black;
+                border: 1px solid black;
+                background-color: #dddddd;
+                font-size:13px;font-size:13px;">
+                <b>
+                    Item
+                </b>
+            </th>
+            <th
+                style = "width:10%;
+                color: black;
+                border: 1px solid black;
+                background-color: #dddddd;
+                font-size:13px;">
+                <b>
+                    Quantity
+                </b>
+            </th>
+            <th
+                style = "width:10%;
+                color: black;
+                border: 1px solid black;
+                background-color: #dddddd;
+                font-size:13px;">
+                <b>
+                    Unit
+                </b>
+            </th>
+            <th
+                style = "width:15%;
+                color: black;
+                border: 1px solid black;
+                background-color: #dddddd;
+                font-size:13px;">
+                <b>
+                    Unit Price
+                </b>
+            </th>
+            <th
+                style = "width:10%;
+                color: black;
+                border: 1px solid black;
+                background-color: #dddddd;
+                font-size:13px;">
+                <b>
+                    VAT %
+                </b>
+            </th>
+            <th
+                style = "width:10%;
+                color: black;
+                border: 1px solid black;
+                background-color: #dddddd;
+                font-size:12px;">
+                <b>
+                    W/O VAT
+                </b>
+            </th>
+            <th
+                style = "width:10%;
+                color: black;
+                border: 1px solid black;
+                background-color: #dddddd;
+                font-size:13px;">
+                <b>
+                    VAT
+                </b>
+            </th>
+            <th
+                style = "width:10%;
+                color: black;
+                border: 1px solid black;
+                background-color: #dddddd;
+                font-size:13px;">
+                <b>
+                    Total
+                </b>
+            </th>
+        </tr>
+        {% set tax_breakup = get_item_taxes(doc.doctype, doc.name) %}
+        {% for row in doc.items %}
+            <tr style = "border: 1px solid black">
+                <td style = "border: 1px solid black;font-size:13px;">{{row.item_name}}</td>
+                <td style = "border: 1px solid black;font-size:13px;">{{row.qty}}</td>
+                <td style = "border: 1px solid black;font-size:13px;">{{row.uom or ""}}</td>
+                <td style = "border: 1px solid black;font-size:13px;">{{frappe.utils.fmt_money(row.rate | round(2))}}</td>
+
+                {% set item_code = row.item_code or row.item_name %}
+                {% set per = tax_breakup.get(item_code, 0) %}
+
+                <td style = "border: 1px solid black;font-size:13px;">
+                    {{per}}%
+                </td>
+                {% set amount = row.amount | round(2) %}
+                <td style = "border: 1px solid black;font-size:13px;">{{ frappe.utils.fmt_money(amount) }}</td>
+                {% set vat = ( amount * (per / 100)) | round(2) %}
+                <td style = "border: 1px solid black;font-size:13px;">{{ frappe.utils.fmt_money(vat) }}</td>
+                {% set total = (amount + vat) | round(2) %}
+                <td style = "border: 1px solid black;font-size:13px;">{{ frappe.utils.fmt_money(total ) }}</td>
+                {% if row.amount >= 0 %}
+                    {% set _ = invoiced_amount_list.update({'total_base_rate': invoiced_amount_list['total_base_rate'] + amount}) %}
+                    {% set _ = invoiced_amount_list.update({'total_vat_rate': invoiced_amount_list['total_vat_rate'] + vat}) %}
+                    {% set _ = invoiced_amount_list.update({'invoiced_total': invoiced_amount_list['invoiced_total'] + total}) %}
+
+                    {% if per not in tax_details_list %}
+                        {%
+                            set _ = tax_details_list.update({per:
+                            {
+                                "base_rate" : amount,
+                                "vat_rate" : vat,
+                                "total" : total
+                            }})
+                        %}
+                    {% else %}
+                        {% set _ = tax_details_list[per].update(
+                                { "base_rate" : tax_details_list[per]['base_rate'] + amount }
+                            )
+                        %}
+                        {% set _ = tax_details_list[per].update(
+                                {"vat_rate" : tax_details_list[per]['vat_rate'] + vat }
+                            )
+                        %}
+                        {% set _ = tax_details_list[per].update(
+                                {"total" : tax_details_list[per]['total'] + total }
+                            )
+                        %}
+                    {% endif %}
+                {% else %}
+                    {% set _ = invoiced_amount_list_negative.update({'total_base_rate': invoiced_amount_list_negative['total_base_rate'] + amount}) %}
+                    {% set _ = invoiced_amount_list_negative.update({'total_vat_rate':  invoiced_amount_list_negative['total_vat_rate'] + vat}) %}
+                    {% set _ = invoiced_amount_list_negative.update({'invoiced_total':  invoiced_amount_list_negative['invoiced_total'] + total}) %}
+
+                    {% if per not in negative_tax_details_list %}
+                        {%
+                            set _ = negative_tax_details_list.update({per:
+                            {
+                                "base_rate" : amount,
+                                "vat_rate" : vat,
+                                "total" : total
+                            }})
+                        %}
+                    {% else %}
+                        {% set _ = negative_tax_details_list[per].update(
+                                { "base_rate": (negative_tax_details_list[per]['base_rate'] + amount | abs )}
+                            )
+                        %}
+                        {% set _ = negative_tax_details_list[per].update(
+                                {"vat_rate" : negative_tax_details_list[per]['vat_rate'] + vat}
+                            )
+                        %}
+                        {% set _ = negative_tax_details_list[per].update(
+                                {"total" : negative_tax_details_list[per]['total'] + total }
+                            )
+                        %}
+                    {% endif %}
+                {% endif  %}
+            </tr>
+        {% endfor %}
+    </table>
+    <br>
+</div>
+
+<div>
+    <p>{{_(doc.terms)}}</p>
+    <br>
+</div>
+
+<style>
+    .print-format td, .print-format th {
+    padding: 5px !important;
+}
+</style>
+
+{% set com_cur = frappe.db.get_value("Company",doc.company, "default_currency") %}
+<div class="col-xs-12" style = "page-break-inside: avoid">
+    <div class="row">
+        <div class="col-xs-4" style="text-align:left;margin-top: 0px;padding-left:0px;">
+            <!--  <img id='barcode'
+            src="https://api.qrserver.com/v1/create-qr-code/?data=38udbhbhubhdbdhubehubedxuhbwxdsdhbxwhbhwbu9bbehhwbhdbddbudu832888223&amp;size=100x100"
+            alt=""
+            title="HELLO"
+            width="175"
+            height="175" /> -->
+        </div>
+        <div class="col-xs-8" style="font-size:13px;margin-top:0px;margin-bottom:0px;">
+            <table width = "100%">
+                <tr width = "100%" style = "border-bottom: 1px solid black; border-top: 1px solid black;font-size:13px;">
+                    <th width = "25%" style = " color: black;"></th>
+                    <th width = "25%" style = " color: black;"><b>BASE</b></th>
+                    <th width = "25%" style = " color: black;"><b>VAT RATE</b></th>
+                    <th width = "25%" style = " color: black;"><b>Total</b></th>
+                </tr>
+                <tr width = "100%" style = "border-bottom: 1px solid black; border-top: 1px solid black;font-size:13px;">
+                    <td style= "font-size:8px"><b>{{"Invoiced Amount"}}<br>({{doc.currency}})</b></td>
+                    {% set sum_base_rate = invoiced_amount_list['total_base_rate'] | round(2) %}
+                    <td width = "25%" style = " color: black;">{{ frappe.utils.fmt_money(sum_base_rate ) }}</td>
+                    {% set sum_vat_rate = invoiced_amount_list['total_vat_rate']  | round(2) %}
+                    <td width = "25%" style = " color: black;">{{ frappe.utils.fmt_money( sum_vat_rate) }}</td>
+                    {% set sum_total = (sum_base_rate + sum_vat_rate ) | round(2)%}
+                    <td width = "25%" style = " color: black;">{{ frappe.utils.fmt_money( sum_total ) }}</td>
+                </tr>
+                {% set positive = {'base_rate': 0, 'vat_rate': 0, 'total': 0} %}
+                {% for per in tax_details_list %}
+                    <tr width = "100%" style = "border-bottom: 1px solid black; border-top: 1px solid black;font-size:13px;">
+                        <td width = "25%" style = " color: black;">{{ per }} % </td>
+                        {% set exchange_rate = doc.conversion_rate | round(3) %}
+                        {% set exc_base_rate = ( tax_details_list[per]['base_rate'] * exchange_rate) | round(2) %}
+                        {% set br = positive['base_rate'] + exc_base_rate %}
+                        {% set _= positive.update({'base_rate': br}) %}
+                        <td width = "25%" style = " color: black;">{{ frappe.utils.fmt_money(exc_base_rate) }}</td>
+                        {% set exc_vat_rate = (tax_details_list[per]['vat_rate'] * exchange_rate ) | round(2) %}
+                        {% set vr = positive['vat_rate'] + exc_vat_rate %}
+                        {% set _= positive.update({'vat_rate': vr}) %}
+                        <td width = "25%" style = " color: black;">{{ frappe.utils.fmt_money( exc_vat_rate) }}</td>
+                        {% set exc_total = (exc_base_rate + exc_vat_rate ) | round(2) %}
+                        {% set totl = positive['total'] + exc_total %}
+                        {% set _= positive.update({'total': totl}) %}
+                        <td width = "25%" style = " color: black;">{{ frappe.utils.fmt_money(exc_total) }}</td>
+                    </tr>
+                {% endfor %}
+                {% set negative = {'base_rate': 0, 'vat_rate': 0, 'total': 0} %}
+                {% for per in negative_tax_details_list %}
+                    <tr width = "100%" style = "border-bottom: 1px solid black; border-top: 1px solid black;font-size:13px;">
+                        {% set exchange_rate = doc.conversion_rate | round(3) %}
+                        <td width = "25%" style = " color: black;border-bottom: 1px solid black;">{{per}} %</td>
+                        {% set neg_base_rate = (negative_tax_details_list[per]['base_rate'] * exchange_rate ) | round(2) %}
+                        {% set br = negative['base_rate'] + neg_base_rate %}
+                        {% set _= negative.update({'base_rate': br}) %}
+                        <td width = "25%" style = " color: black;border-bottom: 1px solid black;">
+                            {{ frappe.utils.fmt_money(neg_base_rate) }}
+                        </td>
+                        {% set neg_vat_rate = (negative_tax_details_list[per]['vat_rate'] * exchange_rate ) | round(2) %}
+                        {% set vr = negative['vat_rate'] + neg_vat_rate %}
+                        {% set _= negative.update({'vat_rate': vr}) %}
+                        <td width = "25%" style = " color: black;border-bottom: 1px solid black;">
+                            {{ frappe.utils.fmt_money( neg_vat_rate ) }}
+                        </td>
+                        {% set neg_total = (neg_base_rate + neg_vat_rate ) | round(2) %}
+                        {% set totl = negative['total'] + neg_total %}
+                        {% set _= negative.update({'total': totl}) %}
+                        <td width = "25%" style = " color: black;border-bottom: 1px solid black;">
+                            {{ frappe.utils.fmt_money(neg_total) }}
+                        </td>
+                    </tr>
+                {% endfor %}
+                <tr width = "100%" style = "border-bottom: 1px solid black; border-top: 1px solid black;font-size:13px;">
+                    <td width = "25%" style = " color: black;">Total</td>
+                    {% set total_base = positive['base_rate'] + negative['base_rate'] %}
+                    <td width = "25%" style = " color: black;">{{ frappe.utils.fmt_money( total_base | round(2) )  }}</td>
+                    {% set total_vat = positive['vat_rate'] + negative['vat_rate'] %}
+                    <td width = "25%" style = " color: black;">{{ frappe.utils.fmt_money(total_vat | round(2) ) }}</td>
+                    {% set total_tax = positive['total'] + negative['total']  %}
+                    <td width = "25%" style = " color: black;">{{ frappe.utils.fmt_money(total_tax | round(2) ) }}</td>
+                </tr>
+                <tr>
+                    <td colspan=4 style = "text-align:right;">
+                        <h6 style = "margin-top: 0px; margin-bottom: 0px;">
+                            {{_("Note: Amounts contain rounded numbers")}}
+                        </h6>
+                    </td>
+                </tr>
+                {% set dig = {0: '', 1: '0', 2: '00', 3: '000'} %}
+                {% set str_ex = frappe.utils.fmt_money(doc.conversion_rate | round(3)) | string %}
+                {% set len = str_ex.split(',')[1] | length %}
+                {% set exchange_rate = str_ex + dig.get(3-len) %}
+                <tr>
+                    <td colspan=4 style = "text-align:right;">
+                        <b>
+                            <h5 style = "margin-top: 0px; margin-bottom: 0px;">
+                            {% if doc.conversion_rate == 1%}
+                                {{_("Exchange rate:")}} {{exchange_rate}}
+                            {% else %}
+                                {{_("Exchange rate:")}} {{exchange_rate}} {{_(frappe.db.get_value("Currency", com_cur, "symbol"))}} / 1 {{doc.currency}}
+                            {% endif %}
+                            </h5>
+                        </b>
+                    </td>
+                </tr>
+                <tr style = "background-color:hsl(91deg 91% 53% / 38%)">
+                    <td colspan = 2 style = "text-align: center">
+                        <b>{{_("Total amount to be paid :")}}</b>
+                    </td>
+                    <td colspan = 2 style = "text-align: center">
+                        {% set final_value = invoiced_amount_list['invoiced_total'] + invoiced_amount_list_negative['invoiced_total'] %}
+                        <b>{{frappe.utils.fmt_money( final_value | round(2))}} {{doc.currency}}</b>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>

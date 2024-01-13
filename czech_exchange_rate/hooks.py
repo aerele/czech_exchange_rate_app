@@ -62,6 +62,12 @@ doctype_js = {
 #	"filters": "czech_exchange_rate.utils.jinja_filters"
 # }
 
+jinja = {
+	"methods": [
+	    "czech_exchange_rate.utils.jinja_methods.get_item_taxes",
+	]
+}
+
 # Installation
 # ------------
 
