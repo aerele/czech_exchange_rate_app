@@ -1,5 +1,6 @@
 from . import __version__ as app_version
 
+
 app_name = "czech_exchange_rate"
 app_title = "Czech Exchange Rate"
 app_publisher = "SDI Gifts"
@@ -12,6 +13,8 @@ app_license = "MIT"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/czech_exchange_rate/css/czech_exchange_rate.css"
+
+app_include_js = "czech_exchange_rate.bundle.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/czech_exchange_rate/css/czech_exchange_rate.css"
