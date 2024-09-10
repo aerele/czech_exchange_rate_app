@@ -14,8 +14,11 @@ const TRANSACTION_DOCTYPES = [
 for (const doctype of TRANSACTION_DOCTYPES) {
     frappe.ui.form.on(doctype, {
         update_exchange_rate: function(frm) {
-            cur_frm.doc.__onload.load_after_mapping = false
-            cur_frm.trigger("currency")
+            if(cur_frm.doc.update_exchange_rate){
+                cur_frm.doc.__onload.load_after_mapping = false
+                cur_frm.trigger("currency")
+                cur_frm.set_value('update_exchange_rate', 0)
+            }
         }
     })
 }
